@@ -1,0 +1,67 @@
+create directory UTL_FILE_TEST as 'c:\garcia';
+
+
+
+grant read, write on utl_file_test to hr;
+
+select * from dba_objects where object_name = any ('UTL_FILE_TEST','UTL_FILE_TEST'); 
+
+
+grant execute on utl_file to public;
+
+set serveroutput on
+
+declare
+    v_line           varchar2(32767);
+    c_location       constant varchar2(80) := 'UTL_FILE_TEST';
+    c_filename       constant varchar2(80) := 'test.txt';
+    v_handle         utl_file.file_type;
+    
+    procedure show_is_open 
+        is
+        begin   
+                case utl_file.is_open(file => v_handle)
+                    when true then
+                        dbms_output.put_line('open');
+                    else
+                        dbms_output.put_line('closed');
+                end case;
+        end show_is_open;
+    
+    procedure put_line
+        is
+        begin
+            utl_file.put_line(file => v_handle, buffer => 'Testando', autoflush => false);
+    end put_line;
+
+begin
+    --utl_file.fclose(file => v_handle);
+    v_handle := utl_file.fopen(location => c_location, filename => c_filename, open_mode => 'w', max_linesize => 0);
+    
+    show_is_open;
+    
+    put_line;
+    
+    utl_file.fclose(file => v_handle);
+    
+    show_is_open;
+
+exception
+    when
+        -- ORA-29287: invalid maximum line size
+        utl_file.invalid_maxlinesize
+     then
+    -- Fclose_All closes all open files for this session.
+    -- It is for cleanup use only. File handles will not be cleared
+    -- (Is_Open will still indicate they are valid)
+    utl_file.fclose_all;
+    raise_application_error ( -20000, 'Invalid_Maxlinesize trapped' );
+
+    when
+         -- ORA-29282: invalid file ID
+         utl_file.invalid_filehandle
+    then
+        utl_file.fclose_all;
+        raise_application_error ( -20000, 'Invalid_Filehandle trapped' );
+end;
+/
