@@ -1,0 +1,27 @@
+create directory directory_test as 'c:\orac';
+set serveroutput on
+grant read, write on directory directory_test to hr;
+grant execute on utl_file to public;
+
+******HR***********************************
+
+set serveroutput on
+DECLARE
+    arquivo_ler UTL_FILE.FILE_TYPE;
+    linha VARCHAR2(100);
+BEGIN
+    arquivo_ler := UTL_FILE.FOPEN('DIRECTORY_TEST', 'teste.txt', 'r');
+    LOOP
+        UTL_FILE.GET_LINE(arquivo_ler, linha);       
+        DBMS_OUTPUT.PUT_LINE(linha);
+        
+    END LOOP;
+    UTL_FILE.FCLOSE(arquivo_ler);
+EXCEPTION
+    WHEN UTL_FILE.INVALID_PATH THEN
+        DBMS_OUTPUT.PUT_LINE('UTL_FILE.INVALID_PATH');	
+        UTL_FILE.FCLOSE(arquivo_ler);
+    WHEN No_data_found THEN
+        UTL_File.Fclose(arquivo_ler);        
+END;
+/
