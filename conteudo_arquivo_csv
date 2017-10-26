@@ -1,0 +1,41 @@
+SET SERVEROUTPUT ON
+DECLARE
+    v_line VARCHAR2(32767);
+    v_instr VARCHAR2(32767);
+    c_location CONSTANT VARCHAR2(255) := 'DIRECTORY_TESTE';
+    c_filename CONSTANT VARCHAR2(255) := 'teste2.txt';
+    v_handle   UTL_FILE.FILE_TYPE;
+    v_nome     VARCHAR2(255);
+    v_id       NUMBER;
+    v_data_nascimento DATE;    
+BEGIN
+    v_handle := UTL_FILE.FOPEN(location => c_location, filename => c_filename, open_mode => 'r');
+    LOOP
+        BEGIN
+            UTL_FILE.GET_LINE(v_handle, v_line);
+            v_instr := instr(v_line, ';');
+            v_nome := substr(v_line, 1, v_instr - 1);
+            v_line := substr(v_line, v_instr + 1);
+            v_instr := instr(v_line, ';');
+            v_id := substr(v_line, 1, v_instr - 1);
+            v_line := substr(v_line, v_instr + 1);
+            v_instr := instr(v_line, ';');
+            v_data_nascimento := substr(v_line, 1, v_instr - 1);
+            v_line := substr(v_line, v_instr + 1); 
+            --DBMS_OUTPUT.PUT_LINE(v_line);
+            INSERT INTO tabela VALUES(v_nome, v_id, v_data_nascimento);
+        EXCEPTION 
+            WHEN NO_DATA_FOUND THEN
+                EXIT;
+        END;
+    END LOOP;
+    UTL_FILE.FCLOSE(file => v_handle);
+EXCEPTION
+    WHEN UTL_FILE.INVALID_MAXLINESIZE THEN
+        UTL_FILE.FCLOSE_ALL;
+        RAISE_APPLICATION_ERROR(-20000, 'INVALID_MAXLINESIZE');
+    WHEN UTL_FILE.INVALID_FILEHANDLE THEN
+        UTL_FILE.FCLOSE_ALL;
+        RAISE_APPLICATION_ERROR(-20000, 'INVALID_FILEHANDLE');
+END;
+/
